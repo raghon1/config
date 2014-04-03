@@ -28,3 +28,8 @@ rst2man () {
     /usr/bin/rst2man $1 | nroff -c -mandoc | less
 }
 
+# Init other scripts
+# #################################3333
+
+# Init SSH agent
+source $raghon/init-ssh
