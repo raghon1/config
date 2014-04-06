@@ -1,0 +1,26 @@
+# Create a new window named VirtProv
+
+new-window -n "Client dev"
+
+# Create panes
+split-window 
+split-window 
+split-window
+
+select-layout "2aef,269x68,0,0[269x7,0,0{237x7,0,0,6,31x7,238,0,183},269x52,0,8,182,269x7,0,61,184]"
+
+send-keys -t 1 'ssh' Space 'virtprov01.uio.no' Space 'c-m'
+send-keys -t 1 'cd' Space '/GIT/UTV/virt-selfservice/Client' 'c-m' 
+send-keys -t 1 'psqldev' 'c-m'
+
+clock-mode -t 2
+
+send-keys -t 3 'ssh' Space 'virtprov01.uio.no' Space 'c-m'
+send-keys -t 3 'cd' Space '/GIT/UTV/virt-selfservice/Client' 'c-m' 
+send-keys -t 3 'export' Space 'PERL5LIB=lib' 'c-m' 
+send-keys -t 3 'vim' Space 'self.pl' 'c-m'
+
+
+send-keys -t 4 'ssh' Space 'virtprov01.uio.no' Space 'c-m'
+send-keys -t 4 'cd' Space '/GIT/UTV/virt-selfservice/Client' 'c-m' 
+send-keys -t 4 'export' Space 'PERL5LIB=lib' 'c-m' 
