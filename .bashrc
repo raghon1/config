@@ -42,9 +42,13 @@ rst2man () {
 }
 
 tmux () {
+  if [ -f /usr/local/bin/tmux ] ; then
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
     /usr/local/bin/tmux $*
     #/usr//bin/tmux $*
+  else 
+    /usr/bin/tmux $*
+  fi
 }
 
 raghon=$HOME/.raghon-cfg/config
