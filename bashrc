@@ -14,6 +14,19 @@ case $- in
     *)      # non-interactive shell ;;
 esac
 
+# Fix TERMINAL for tmux
+
+
+case "$TERM" in
+    xterm)
+        read -d '' terminal terminal_args < /proc/$PPID/cmdline
+        case "${terminal##*/}" in
+            gnome-terminal*|xterm*) TERM="$TERM-256color";;
+        esac
+        unset terminal terminal_args
+        ;;
+esac
+
 alias tmuxA='TERM=screen-256color-bce ; tmux attach'
 
 [ -f /etc/bash_completion.d/git ] && source /etc/bash_completion.d/git
@@ -32,6 +45,4 @@ rst2man () {
 # #################################3333
 
 # Init SSH agent
-source $raghon/init-ssh
-
-
+#source $raghon/init-ssh

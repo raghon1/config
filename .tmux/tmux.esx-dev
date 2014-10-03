@@ -16,7 +16,7 @@ send-keys -t 1 'psqldev' 'c-m'
 clock-mode -t 2
 
 send-keys -t 3 'ssh' Space 'esx-mgmt.uio.no' Space 'c-m'
-send-keys -t 3 'cd' Space 'GIT/Head/virt-selfservice/bin' 'c-m' 
+send-keys -t 3 'cd' Space 'GIT/Head/virt-selfservice/Server/bin' 'c-m' 
 send-keys -t 3 'export' Space 'PERL5LIB=../lib' 'c-m' 
 send-keys -t 3 'vim' Space 'vmDBcreate.pl' 'c-m'
 
@@ -24,3 +24,5 @@ send-keys -t 3 'vim' Space 'vmDBcreate.pl' 'c-m'
 send-keys -t 4 'ssh' Space 'esx-mgmt.uio.no' Space 'c-m'
 send-keys -t 4 'cd' Space 'GIT/Head/virt-selfservice/bin' 'c-m' 
 send-keys -t 4 'export' Space 'PERL5LIB=../lib' 'c-m' 
+
+rename-window "Server dev"

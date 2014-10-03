@@ -1,6 +1,7 @@
 # Create a new window named VirtProv
 
 new-window -n "Client dev"
+rename-window -t 5 "Client dev"
 
 # Create panes
 split-window 
@@ -24,3 +25,7 @@ send-keys -t 3 'vim' Space 'self.pl' 'c-m'
 send-keys -t 4 'ssh' Space 'virtprov01.uio.no' Space 'c-m'
 send-keys -t 4 'cd' Space '/GIT/UTV/virt-selfservice/Client' 'c-m' 
 send-keys -t 4 'export' Space 'PERL5LIB=lib' 'c-m' 
+
+# Enable Cluster cmd
+# set-window-option synchronize-panes on
+# set-window-option synchronize-panes off
