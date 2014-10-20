@@ -51,5 +51,60 @@ tmux () {
   fi
 }
 
+old_irssi () {
+#    sessions=$(tmux list-sessions -F '#{session_attached}:#{session_name}')
+    if [ $sessions -eq 1 ] ; then
+        # print tmux not started
+        tmux -d new-session -s Saruman -n CHAT irssi
+        exit 0
+    fi
+    #for s in $sessions ; do
+        #IFS=:
+        #set -A muxes $s
+        #case ${muxes[0]} in 
+
+    #done
+}
+
+
+irssi() {
+    sessions=$(tmux list-sessions -F '#{session_attached}:#{session_name}')
+    if tmux has-session -t Saruman >/dev/null 2>&1  ; then
+        # Check if irssi window exist
+        irssi_exist=0
+        for window in $(tmux list-windows -t Saruman -F '#{window_name}') ; do
+            if [ "$window" = "CHAT" ] ; then
+                irssi_exist=1
+                echo $windowd
+            fi
+        done
+        echo "vi har chat windu $irssi_exist"
+        if test $irssi_exist -eq 0 ; then
+            tmux new-window -t Saruman: -n CHAT irssi
+            tmux move-window -s Saruman:0 -t Saruman:+
+            tmux move-window -s Saruman:CHAT -t Saruman:0
+        fi
+        attached=0
+        for s in $sessions ; do
+            echo $s
+            case $s in
+                1:*) attached=1;;
+            esac
+        done
+        echo "ATTACHED = $attached"
+        if [ $attached -eq 1 ] ; then
+            tmux switch-client -t Saruman:CHAT
+            #tmux select-window -t CHAT
+        else
+            echo "ATTACHED"
+            tmux attach-session -t Saruman:CHAT
+        fi
+    else
+        tmux new-session -s Saruman -n CHAT irssi
+        return 0
+    fi
+}
+
+
 raghon=$HOME/.raghon-cfg/config
 source $raghon/bashrc
