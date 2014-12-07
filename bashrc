@@ -41,8 +41,27 @@ rst2man () {
     /usr/bin/rst2man $1 | nroff -c -mandoc | less
 }
 
-# Init other scripts
-# #################################3333
 
-# Init SSH agent
-#source $raghon/init-ssh
+uio () {
+    case $1 in
+        on)
+            ssh -fN uio-init
+            sudo networksetup  -setsocksfirewallproxy Wi-Fi localhost 20000
+            sudo networksetup  -setsocksfirewallproxystate Wi-Fi on
+            ;;
+        off)
+            sudo networksetup  -setsocksfirewallproxystate Wi-Fi off
+            ps -ef | awk '/ssh -fN uio-init/ && !/awk/ {print $2}' | xargs kill
+            ;;
+   esac
+}
+
+telenor() {
+	ssh -i $HOME/.ssh/id_rsa_telenor -fN telenor
+	ssh -fN -D 30000 opsmgt01
+	ssh -fN init-ports
+	ssh -fN -D 24000 sun-mgt01
+}
+
+export PATH=/usr/local/bin:$PATH
+export PATH=/usr/local/sbin:$PATH
