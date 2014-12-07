@@ -57,7 +57,8 @@ uio () {
 }
 
 telenor() {
-	ssh -i $HOME/.ssh/id_rsa_telenor -fN telenor
+	[ -f "$HOME/.ssh/id_rsa_telenor" ] && key = "$HOME/.ssh/id_rsa_telenor" || key="$HOME/.ssh/id_rsa"
+	ssh -i "$key" -fN telenor
 	ssh -fN -D 30000 opsmgt01
 	ssh -fN init-ports
 	ssh -fN -D 24000 sun-mgt01
