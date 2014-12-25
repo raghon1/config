@@ -106,5 +106,3 @@ irssi() {
 }
 
 
-raghon=$HOME/.raghon-cfg/config
-source $raghon/bashrc
