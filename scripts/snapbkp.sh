@@ -15,25 +15,29 @@
 # use the thaw function to reenable the applications.
 
 
-include_fs="datapool/data rpool/mycom"
-include_fs="datapool/data datapool/data2"
-#include_fs="rpool/mycom"
+include_fs="datapool/data datapool/mycom dbpool/backup"
 #include_fs=""
 exclude_fs=""
 
 # Define following vars, if using netapp snapshot
 
-NETAPP="no"
-ZFS="no"
-LVM="yes"
+# NETAPP="snapshot"
+# NETAPP="snapvault"
+# NETAPP="no"
+NETAPP="snapshot"
+ZFS="yes"
+LVM="no"
 lvm_snap_size="12M"
- 
+
+# Maximum number of snapshots to keep on the filer
+VERSIONS=2
+
 freezeFail="thaw"
 
-FILER="v-st-c7-z2-01-v2616.st.nsc.no"
-USER="snap_mpmprod"
-VOLUME="mpm_prod_flatfiles"
-SSH_KEY="/etc/adsm/aux1/keys/snap_mpmprod"
+FILER="v85z2f1-mgmt.nsc.no"
+USER="snap_mpmtest"
+VOLUME="mpm_test_flatfiles"
+SSH_KEY="/etc/adsm/aux1/keys/snap_mpmtest"
 
 out="-u2"
 
@@ -73,12 +77,11 @@ export LC_TIME LANG DSM_LOG DSM_DIR DSM_CONFIG
 errorLog=${DSM_LOG}/ZFS_snap.err
 Log=${DSM_LOG}/ZFS_snap.log
 
-[ ! -d ${DSM_LOG} ] && mkdir -p ${DSM_LOG}
 # Redir STDOUT to ${Log} and STDERR to ${errorLog}
 exec 4>&2 5>&1
-#exec 1> ${Log}
-#exec 2> ${errorLog}
- 
+exec 1> ${Log}
+exec 2> ${errorLog}
+
 # #########################################
 # Do not edit below this line !!!
 # #########################################
@@ -86,16 +89,16 @@ exec 4>&2 5>&1
 zfs=/usr/sbin/zfs
 lvm=/sbin/lvm
 
- 
+
 # If ${include_fs} aint defined, find all zfs filesytems in the system
 # PS : not reccomended!!!
 [ -z "${include_fs}" -a "${ZFS}" == "yes" ] && include_fs=$(${zfs} list -o name -Ht filesystem)
- 
- 
+
+
 # Try to figure out where the filesystem is mounted
 check_fs() {
         fs=$1
- 
+
 	if [ -f ${zfs} ] ; then
 		mounted=$(${zfs} get -Ho value mounted ${fs})
 		mountpoint=$(${zfs} list -Ht filesystem -o mountpoint ${fs})
@@ -129,7 +132,7 @@ check_fs() {
                 fi
         fi
 }
- 
+
 # Destroy snapshot
 rm_snapshot() {
         fs=$1
@@ -160,7 +163,7 @@ rm_snapshot() {
 		fi
 	fi
 }
- 
+
 # Create ZFS snapshot
 mk_snapshot() {
         fs=$1
@@ -186,37 +189,99 @@ mk_snapshot() {
 		fi
 	fi
 }
- 
+
+list_netapp_snapshots() {
+        snap_show="$ssh_filer snapshot show -volume ${VOLUME} -comment \"snapbkp\" -fields vserver,volume,snapshot,comment,state -busy false"
+        snap_show_out=$($snap_show 2>&1)
+        snap_list=$(print "$snap_show_out" | nawk '$4 == "snapbkp" {print $3}')
+
+        snapCount=$(print "$snap_list" | wc -l | sed 's/ //g')
+}
+
 # Create Netapp snapshot
 mk_netapp_snapshot() {
         DAY=$(/usr/bin/date '+%a')
         DATE=$(/usr/bin/date '+%a.%d.%m.%Y')
- 
+        DATE2=$(/usr/bin/date '+%Y%m%d')
+
         # Create SNAP
         VAULT="nightly"
         [ $DAY = "Sun" ] && VAULT="weekly"
- 
+
         print "Creating NETAPP snapshot ${vault} on volume ${VOLUME} ${DATE}"
-        netappsnap=$(/usr/bin/ssh -i ${SSH_KEY} ${USER}@${FILER} snapvault snap create -w ${VOLUME} ${VOLUME}_${VAULT} 2>&1)
- 
-        print "${netappsnap}"
-        snapstat=$(print "${netappsnap}" | grep "Snapshot creation successful")
- 
- 
+
+        case $NETAPP in
+                snapshot)
+                        ssh_filer="/usr/bin/ssh -i ${SSH_KEY} ${USER}@${FILER}"
+                        snapcmd="/usr/bin/ssh -i ${SSH_KEY} ${USER}@${FILER} snapshot create -volume ${VOLUME} -snapshot ${VOLUME}.${DATE2}"
+                        if [ -z "${no_exec}" ] ; then
+                                if ! $snapcmd ; then
+                                        return 1
+                                fi
+                        else
+                                print -u4 "$snapcmd"
+                        fi
+                        list_netapp_snapshots
+
+                        nr=1
+                        while [ $snapCount -gt $VERSIONS ] ; do
+                                rm_snapshot=$(print "$snap_list" | head -$nr | tail -1)
+                                if [ -n "${rm_snaps_error}" ] ; then
+                                        for rm in ${rm_snaps_error} ; do
+                                                if [ $rm == $rm_snapshot ] ; then
+                                                        continue
+                                                fi
+                                        done
+                                fi
+                                snap_delete="$ssh_filer snapshot delete -volume ${VOLUME} -snapshot $rm_snapshot"
+                                if [ -z "${no_exec}" ] ; then
+                                        exec_snap_delete=$($snap_delete 2>&1)
+                                else
+                                        print -u4 $snap_delete
+                                        if ! $snap_delete ; then
+                                                rm_snaps_error="$rm_snaps_error$rm_snapshot "
+                                                print "Not able to delete $rm_snapshot"
+                                                list_netapp_snapshots
+                                                let snapCount=${snapCount}-$nr
+                                                let nr=$nr+1
+                                                continue
+                                        fi
+                                fi
+                                list_netapp_snapshots
+                        done
+
+                        ;;
+                snapvault)
+                        netappsnap=$(/usr/bin/ssh -i ${SSH_KEY} ${USER}@${FILER} snapvault snap create -w ${VOLUME} ${VOLUME}_${VAULT} 2>&1)
+                        snapstat=$(print "${netappsnap}" | grep "Snapshot creation successful")
+                        case ${snapstat} in
+                                *successful*)
+                                        return 0
+                                        ;;
+                        esac
+                        ;;
+                        *)
+                                print -u4 "Please correct the variable \$NETAPP, and rerun"
+                                exit 1
+                        ;;
+        esac
+
+        snapstat=$(print "${netappsnap}" | grep "0")
+
         case ${snapstat} in
-                *successful*)
+                *0*)
                         return 0
                         ;;
         esac
- 
- 
+
+
         if [ -n "${netappsnap}" ] ; then
                 return 1
         else
                 return 0
         fi
 }
- 
+
 # Backup snapshot to TSM
 backup() {
         fs=$1
@@ -230,15 +295,15 @@ backup() {
                 print -u4 rm_snapshot ${fs}
         fi
 }
- 
+
 help() {
         print -u4 "Usage: $0 [-v] [-n] [-h]
- 
+
         $0      :->     without any arguments, execute backup
         $0 -n   :->     execute, but dont execute dsmc, but print out the commands to the logfile
         $0 -v   :->     print version number of this script
         $0 -h   :->     print this help file
- 
+
         "
         exit 1
 }
@@ -249,7 +314,7 @@ while getopts vnh name ; do
                 h) help;;
         esac
 done
- 
+
 # Stop or place apps in backup modus
 if ! freeze ; then
         if [ "${freezeFail}" = "thaw" ] ; then
@@ -259,10 +324,10 @@ if ! freeze ; then
         print ${out} "not able to freeze, exiting"
         exit 1
 fi
- 
+
 # Do netapp snapshot
-if [ "${NETAPP}" == "yes" ] ; then
-        if ! ${no_exec} mk_netapp_snapshot ; then
+if [ "${NETAPP}" != "no" ] ; then
+        if ! mk_netapp_snapshot ; then
                 if [ "${freezeFail}" = "thaw" ] ; then
                         print -${out} "not able to snap netapp, thaw application"
                         thaw
@@ -270,7 +335,7 @@ if [ "${NETAPP}" == "yes" ] ; then
                 exit 1
         fi
 fi
- 
+
 if [ "${ZFS}" == "yes" -o "${LVM}" == "yes" ] ; then
         for include in ${include_fs} ; do
                 skip=0
@@ -281,11 +346,11 @@ if [ "${ZFS}" == "yes" -o "${LVM}" == "yes" ] ; then
                         fi
                 done
                 [ "${skip}" -eq 1 ] && continue
- 
+
                 if check_fs ${include} ; then
-                        if ! mk_snapshot ${include} ; then
+                        if ! ${no_exec} ${no_exec} mk_snapshot ${include} ; then
                                 if [ "${freezeFail}" = "thaw" ] ; then
-                                        print ${out} "not able to snap zfs, thaw application"
+                                        print -${out} "not able to snap zfs, thaw application"
                                         thaw
                                 fi
                                 exit 1
@@ -294,11 +359,11 @@ if [ "${ZFS}" == "yes" -o "${LVM}" == "yes" ] ; then
                 fi
         done
 fi
- 
+
 # Unfreeze applications, but do not wait for them to start!!!
 # PS : you will not get a warning from this script if applications don't start
 thaw &
- 
+
 # Loop all filesystems and do backup
 for bkp in ${do_backup} ; do
         IFS=:
