@@ -35,8 +35,8 @@ console="php /var/www/html/owncloud/console.php"
 
 sleep 10
 # Configure owncloud
-php /var/www/html/owncloud/index.php
-php /var/www/html/owncloud/cron.php
+sudo -u apache php /var/www/html/owncloud/index.php
+sudo -u apache php /var/www/html/owncloud/cron.php
 
 mysql -h localhost -u owncloud -powncloudsql owncloud -e "update appconfig set configvalue = 'cron' where appid = 'core' and configkey='backgroundjobs_mode';"
 

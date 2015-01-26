@@ -7,8 +7,6 @@ $AUTOCONFIG = array(
   "dbhost"        => "localhost",
   "dbtableprefix" => "",
   "adminlogin"    => "admin",
-  "adminpass"     => "newroot",
   "directory"     => "/var/www/html/owncloud/data",
   "forcessl"	  => true,
-  'overwritewebroot' => '/owncloud',
 );
