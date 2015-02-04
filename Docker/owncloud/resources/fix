@@ -1,0 +1,5 @@
+server=fil-te.cloudwalker.no
+#docker run -d -t -p 10001:10001 -p 8082:8082 -p 12001:12001 -p 443 --volumes-from $server-data --link $server-db:db \
+docker run -d -t -p 10001 -p 8082 -p 12001 -p 443:443 --volumes-from $server-data --link $server-db:db \
+        -e VIRTUAL_HOST=$server \
+        -e SEAFILE_DOMAIN_NAME=cloudwalker.no --name $server raghon/seafile
