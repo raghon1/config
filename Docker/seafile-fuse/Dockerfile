@@ -1,26 +1,13 @@
-FROM centos:7
+FROM phusion/baseimage
+# Initially was based on work of Alessandro Viganò and Andreas Löffler
 MAINTAINER ragnar.hongset@raghon.no
 
-# Adds required packages
-RUN yum --releasever=7 -y install git fuse && \
-	yum clean all --releasever=7
-
-# Install Cloudfuse
-RUN yum --releasever=7 -y install gcc make fuse-devel curl-devel \
-	libxml2-devel openssl-devel && \
-	yum clean all --releasever=7
-RUN cd /usr/local && git clone https://github.com/redbo/cloudfuse.git
-RUN cd /usr/local/cloudfuse && git checkout 21358f159d13c6196cee17652fd3d415dfd984f3
-RUN cd /usr/local/cloudfuse && ./configure && make && make install
-RUN yum --releasever=7 -y remove \*-devel && \
-	yum clean all --releasever=7
-RUN mkdir /var/cloudfuse
-
-ADD assets/ /root/config/
-
-# Install seafile requirements
-RUN yum --releasever=7 -y install epel-release
-RUN yum --releasever=7 -y install nginx python-imaging MySQL-python python-simplejson python-setuptools sendmail tar
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y ca-certificates \
+                       nginx \
+                       python2.7-mysqldb python-setuptools python-simplejson python-imaging \
+                       sqlite3 dnsmasq
 
 ENV SERVER_NAME example
 ENV SERVER_ADDR seafile.example.com
@@ -35,7 +22,7 @@ RUN mkdir installed
 RUN mv seafile-server_* installed
 
 # Install DnsMasq service.
-RUN mkdir -p /etc/service/dnsmasq
+RUN mkdir /etc/service/dnsmasq
 ADD service-dnsmasq.sh /etc/service/dnsmasq/run
 
 # Install Seafile service.
