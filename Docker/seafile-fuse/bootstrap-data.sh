@@ -3,6 +3,12 @@
 # Note: Don't set "-u" here; we might check for unset environment variables!
 set -e
 
+# Create Filesystem on objectStorage
+
+mkfs.s3ql --plain -L "$CUSTOMER" --max-obj-size 10240 swift://ams01.objectstorage.service.networklayer.com/fs/$CUSTOMER/
+mkdir -p /opt/seafile/seafile-data
+mount.s3ql --log /root/.s3ql/mount.log --compress zlib swift://ams01.objectstorage.service.networklayer.com/fs/$CUSTOMER/ /opt/seafile/seafile-data
+
 # Generate the TLS certificate for our Seafile server instance.
 SEAFILE_CERT_PATH=/etc/nginx/certs
 mkdir -p "$SEAFILE_CERT_PATH"
@@ -38,16 +44,25 @@ sed -i -e "s/.*daemon.*=.*/daemon = False/g" \
     /opt/seafile/seafile-server-*/runtime/seahub.conf
 
 # Execute Seafile's configuration script for setting up the database.
+#cd /opt/seafile/seafile-server-*
+#./setup-seafile-mysql.sh
+expect -f /tmp/init.expect /opt/seafile/seafile-server-*/setup-seafile-mysql.sh /opt/seafile/seafile-data/fs02
+
 cd /opt/seafile/seafile-server-*
-./setup-seafile-mysql.sh
+./seahub.sh stop
+./seafile.sh stop
 
 # After configuring Seafile, patch Seafile's CCNet configuration to point to our HTTPS site.
 sed -i -e "s/.*SERVICE_URL.*=.*/SERVICE_URL = https:\/\/$SEAFILE_DOMAIN_NAME:$SEAFILE_DOMAIN_PORT/g" \
     /opt/seafile/ccnet/ccnet.conf
 
 # Also patch Seahub's configuration to use HTTPS for all downloads + uploads.
-echo "FILE_SERVER_ROOT = 'https://$SEAFILE_DOMAIN_NAME:$SEAFILE_DOMAIN_PORT/seafhttp'" \
-    >> /opt/seafile/seahub_settings.py
+#echo "FILE_SERVER_ROOT = 'https://$SEAFILE_DOMAIN_NAME:$SEAFILE_DOMAIN_PORT/seafhttp'" \
+#    >> /opt/seafile/seahub_settings.py
+echo "EMAIL_USE_TLS = False" >> /opt/seafile/seahub_settings.py
+echo "EMAIL_HOST = '127.0.0.1'" >> /opt/seafile/seahub_settings.py
+echo "EMAIL_PORT = '25'" >> /opt/seafile/seahub_settings.py
+echo "DEFAULT_FROM_EMAIL = 'post@cloudwalker.no'" >> /opt/seafile/seahub_settings.py
 
 # Manually run Seafile to trigger the first-run configuration wizard.
 ./seafile.sh start
@@ -57,3 +72,5 @@ echo "FILE_SERVER_ROOT = 'https://$SEAFILE_DOMAIN_NAME:$SEAFILE_DOMAIN_PORT/seaf
 cd /opt/seafile/seafile-server-*
 ./seahub.sh stop
 ./seafile.sh stop
+
+umount.s3ql /opt/seafile/seafile-data
