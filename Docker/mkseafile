@@ -16,12 +16,11 @@ rm -rf /etc/nginx/tmp_certs/$server.$domain
 docker run -d -p 3306 -e MYSQL_ROOT_PASSWORD=jeyb-fu-hen-ayn- -e MYSQL_DATABASE=seafile --name $server.$domain-db orchardup/mysql
 
 docker run -it \
-	--dns=127.0.0.1 \
 	-h $server \
 	--link $server.$domain-db:db \
 	--name $server.$domain-data \
-	-v /root/.s3ql/swift_hosts:/etc/hosts \
 	-v /root/.s3ql/authinfo2:/root/.s3ql/authinfo2 \
+	-v /root/.s3ql/swift_hosts:/etc/hosts \
 	--cap-add mknod \
 	--cap-add sys_admin \
 	--device=/dev/fuse \

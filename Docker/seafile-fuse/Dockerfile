@@ -7,7 +7,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y ca-certificates \
                        nginx \
                        python2.7-mysqldb python-setuptools python-simplejson python-imaging \
-                       sqlite3 dnsmasq expect sendmail
+                       sqlite3 expect sendmail
 
 # Add S3QL FS
 
@@ -43,8 +43,8 @@ RUN mv seafile-server_* installed
 
 
 # Install DnsMasq service.
-RUN mkdir /etc/service/dnsmasq
-ADD service-dnsmasq.sh /etc/service/dnsmasq/run
+#RUN mkdir /etc/service/dnsmasq
+#ADD service-dnsmasq.sh /etc/service/dnsmasq/run
 
 # Install Seafile service.
 RUN mkdir /etc/service/seafile
