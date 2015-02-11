@@ -28,13 +28,15 @@ docker run -it \
 	-e CUSTOMER=${server}.${domain} \
 	-e DOMAIN=${domain} \
 	-e SEAFILE_DOMAIN_PORT=443 \
+	-e STORAGE=ams01.objectstorage.service.networklayer.com \
+	-e INITFS=false \
 	-e SEAFILE_DOMAIN_NAME=${server}.${domain} \
 	-e admin_user=post@${domain} \
 	-e admin_passwd=newroot \
 	raghon/seafile /usr/local/sbin/bootstrap
 
 
-docker run -d -t --dns=127.0.0.1 -p 10001 -p 8082 -p 12001 -p 443 --volumes-from $server.$domain-data --link $server.$domain-db:db \
+docker run -d -t --dns=127.0.0.1 -p 10001:10001 -p 8082:8082 -p 12001:12001 -p 443:443 --volumes-from $server.$domain-data --link $server.$domain-db:db \
 	-e SEAFILE_DOMAIN_PORT=443 \
 	-h $server \
 	--link $server.$domain-db:db \
@@ -48,6 +50,7 @@ docker run -d -t --dns=127.0.0.1 -p 10001 -p 8082 -p 12001 -p 443 --volumes-from
 	-e VIRTUAL_PORT=8000,10001,8082,12001,443 \
 	-e CUSTOMER=${server}.$domain \
 	-e DOMAIN=${domain} \
+	-e STORAGE=ams01.objectstorage.service.networklayer.com \
 	-e SEAFILE_DOMAIN_NAME=${server}.${domain} --name $server.$domain raghon/seafile
 
 ok=false
@@ -60,6 +63,7 @@ ok=false
 #jcp /etc/nginx/tmp_certs/$server/seafile.key /etc/nginx/certs/
 #cp /etc/nginx/tmp_certs/$server/seafile.crt /etc/nginx/certs/
 
+exit 0
 # Check if proxy is running:
 proxy_running=$(docker inspect --format='{{.State.Running}}' proxy)
 echo $proxy_running

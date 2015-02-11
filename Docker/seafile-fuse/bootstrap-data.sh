@@ -5,9 +5,11 @@ set -e
 
 # Create Filesystem on objectStorage
 
-mkfs.s3ql --plain -L "$CUSTOMER" --max-obj-size 10240 swift://ams01.objectstorage.service.networklayer.com/fs/$CUSTOMER/
+if [ "$INITFS" == "true" ] ; then
+	mkfs.s3ql --plain -L "$CUSTOMER" --max-obj-size 10240 swift://$STORAGE/fs/$CUSTOMER/
+fi
 mkdir -p /opt/seafile/seafile-data
-mount.s3ql --log /root/.s3ql/mount.log --compress zlib swift://ams01.objectstorage.service.networklayer.com/fs/$CUSTOMER/ /opt/seafile/seafile-data
+mount.s3ql --log /root/.s3ql/mount.log --compress zlib swift://$STORAGE/fs/$CUSTOMER/ /opt/seafile/seafile-data
 
 # Generate the TLS certificate for our Seafile server instance.
 SEAFILE_CERT_PATH=/etc/nginx/certs
