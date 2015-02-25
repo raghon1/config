@@ -28,7 +28,17 @@ store_crt() {
 	vim $dir_to/kunder/$server/$server.crt
 }
 
-while getopts "h:s:" arg; do
+copy_to_docker() {
+	server=$1
+	container=$2
+	[ -z "$container" ] && container=$server
+set -x
+	cat $dir_to/kunder/$server/$server.crt | docker exec -i $container /bin/sh -c 'cat - > /etc/nginx/certs/seafile.crt'
+	cat $dir_to/kunder/$server/$server.key | docker exec -i $container /bin/sh -c 'cat - > /etc/nginx/certs/seafile.key'
+}
+
+
+while getopts "C:c:h:s:" arg; do
   case $arg in
     h)
       echo "usage" 
@@ -38,6 +48,13 @@ while getopts "h:s:" arg; do
       lag_req $server
       show_req $server
       store_crt $server
+      ;;
+    C)
+      container=$OPTARG
+      ;;
+    c)
+      server=$OPTARG
+      copy_to_docker $server $container
       ;;
   esac
 done
